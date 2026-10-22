@@ -1,0 +1,47 @@
+package main
+
+import (
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// HashPassword gera o hash bcrypt de uma senha em texto plano
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// CheckPasswordHash compara uma senha em texto plano com um hash armazenado
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func main() {
+	senhaOriginal := "minhaSenhaSegura123"
+
+	// 1. Gerando o hash da senha
+	hash, err := HashPassword(senhaOriginal)
+	if err != nil {
+		fmt.Println("Erro ao gerar hash:", err)
+		return
+	}
+	fmt.Printf("Senha original: %s\n", senhaOriginal)
+	fmt.Printf("Hash bcrypt gerado: %s\n\n", hash)
+
+	// 2. Testando a validação com a senha correta
+	senhaCorreta := "minhaSenhaSegura123"
+	if CheckPasswordHash(senhaCorreta, hash) {
+		fmt.Println("Sucesso: A senha correta correspondeu ao hash!")
+	} else {
+		fmt.Println("Falha: A senha deveria corresponder.")
+	}
+
+	// 3. Testando a validação com uma senha incorreta
+	senhaIncorreta := "senhaErrada456"
+	if CheckPasswordHash(senhaIncorreta, hash) {
+		fmt.Println("Sucesso: A senha correta correspondeu ao hash!")
+	} else {
+		fmt.Println("Negado: A senha incorreta foi rejeitada com segurança!")
+	}
+}

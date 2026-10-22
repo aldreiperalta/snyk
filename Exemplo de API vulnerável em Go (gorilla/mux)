@@ -1,0 +1,72 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"github.com/gorilla/mux"
+)
+
+// Grade representa a estrutura para consulta e atualização de notas
+type Grade struct {
+	StudentID string `json:"studentid"`
+	SubjectID string `json:"subjectid"`
+	Grade     string `json:"grade,omitempty"`
+}
+
+// lookupGradeInDB simula a consulta de notas no banco de dados
+func lookupGradeInDB(grade Grade) Grade {
+	return Grade{
+		StudentID: grade.StudentID,
+		SubjectID: grade.SubjectID,
+		Grade:     "A",
+	}
+}
+
+// updateGradeInDB simula a atualização de notas no banco de dados
+func updateGradeInDB(grade Grade) map[string]string {
+	return map[string]string{
+		"status":  "sucesso",
+		"mensagem": fmt.Sprintf("Nota atualizada para o aluno %s em assunto %s", grade.StudentID, grade.SubjectID),
+	}
+}
+
+// getGrade processa solicitações GET para notas
+func getGrade(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	lookup := Grade{
+		StudentID: r.URL.Query().Get("studentid"),
+		SubjectID: r.URL.Query().Get("subjectid"),
+	}
+
+	grade := lookupGradeInDB(lookup)
+	json.NewEncoder(w.Encode(grade))
+}
+
+// updateGrade lida com solicitações PATCH para notas (sem restrição de controle de acesso)
+func updateGrade(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var grade Grade
+	err := json.NewDecoder(r.Body).Decode(&grade)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := updateGradeInDB(grade)
+	json.NewEncoder(w.Encode(response))
+}
+
+func main() {
+	r := mux.NewRouter()
+
+	r.HandleFunc("/grades", getGrade).Methods("GET")
+	r.HandleFunc("/grades", updateGrade).Methods("PATCH")
+
+	port := 3000
+	fmt.Printf("Servidor iniciando na porta %d\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), r))
+}

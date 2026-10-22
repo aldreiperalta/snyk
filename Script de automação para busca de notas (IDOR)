@@ -1,0 +1,44 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"sync"
+)
+
+func fetchGrade(studentID int) {
+	url := fmt.Sprintf("https://api.grades.patch.edu/grades?subjectid=1293&studentid=2022%d", studentID)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("Erro ao obter a nota do aluno 2022%d: %v\n", studentID, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Resposta diferente de 200 para o aluno 2022%d: %d\n", studentID, resp.StatusCode)
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Erro ao ler o corpo da resposta para o aluno 2022%d: %v\n", studentID, err)
+		return
+	}
+
+	fmt.Printf("Aluno: 2022%d, Nota: %s\n", studentID, string(body))
+}
+
+func main() {
+	var wg sync.WaitGroup
+	for id := 1111; id < 9999; id++ {
+		wg.Add(1)
+		go func(studentID int) {
+			defer wg.Done()
+			fetchGrade(studentID)
+		}(id)
+	}
+	wg.Wait()
+}
